@@ -9,8 +9,8 @@ class Profile {
   {
       this.username = `${username}`,
       this.name = {
-        firstName: `${firstName}`,
-        lastName: `${lastName}`
+        firstName,
+        lastName
       },
     this.password = `${password}`
   }
@@ -19,14 +19,11 @@ class Profile {
     return ApiConnector.createUser(
       {
         username: this.username,
-        name: {
-          firstName: this.firstName,
-          lastName: this.lastName
-        },
+        name: this.name,
         password: this.password
       },
       (err, data) => {
-        console.log(`Пользователь ${this.username} создан.`);
+        console.log(`Creating user ${this.username}`);
         callback(err, data);
       });
   }
@@ -38,84 +35,132 @@ class Profile {
         password: this.password,
       },
       (err, data) => {
-        console.log(`Пользователь ${this.username} авторизован.`);
+        console.log(`Authorizing user ${this.username}`);
         callback(err, data)
       });
   }
 
   addMoney({currency, amount}, callback){
     return ApiConnector.addMoney({currency, amount}, (err, data) => {
-      console.log(`Добавлено ${amount} ${currency} в кошелек ${this.username}`);
+      console.log(`Adding ${amount} ${currency} to ${this.username}`);
       callback(err, data);
       });
   }
 
   convertMoney({fromCurrency, targetCurrency, targetAmount}, callback) {
     return ApiConnector.convertMoney({fromCurrency, targetCurrency, targetAmount}, (err, data) => {
-      console.log(`Перевели ${targetAmount} ${targetCurrency} из ${fromCurrency}`);
+      console.log(`Converting ${fromCurrency} to ${targetAmount} ${targetCurrency}`);
       callback(err, data)
     });
   }
 
   transferMoney({to, amount}, callback) {
     return ApiConnector.transferMoney({to, amount}, (err, data) => {
-      console.log(`Переведено ${amount} токенов пользователю ${to}`);
+      console.log(`Transfering ${amount} of Netcoins to  ${to}`);
       callback(err, data);
     });
   }
 };
 
-const getStocks = function (callback) {
-  return getStocks = ApiConnector.getStocks((err, date) => {
-    console.log(`Получили курс валют`);
-    callback(err, date);
+function getStocks(callback) {
+  return ApiConnector.getStocks((err, data) => {
+    console.log(`Getting stocks info`)
+    callback(err, data);
   });
 };
 
 function main () {
-  const firstUser = new Profile(
-    {
-      username: "Oleg First",
-      name: {
-        firstName: "Oleg",
-        lastName: "Versev"
-        },
-      password: "12345"
-  });
+  let stocks;
+  
+  getStocks((err, data) => {
+    if (err) {
+      console.error(`Error during getting stocks`);
+    } else {
+      console.log(data[0]);
+      stocks = data[0];
+    };
 
-  const userSecond = new Profile(
-    {
-      username: "Sveta Second",
-      name: {
-        firstName: "Sveta",
-        lastName: "Nevolina"
-        },
-      password: "54321"
+    const userFirst = new Profile(
+      {
+        username: "Oleg",
+        name: {
+          firstName: "Oleg",
+          lastName: "Versev"
+          },
+        password: "12345"
     });
-
-    firstUser.creatUser((err, date) => {
+  
+    const userSecond = new Profile(
+      {
+        username: "Sveta",
+        name: {
+          firstName: "Sveta",
+          lastName: "Nevolina"
+          },
+        password: "54321"
+      });
+  
+    userFirst.creatUser((err, data) => {
       if (err) {
-        console.error(`An error occurred during creating ${firstUser}`);
+        console.error(`Error during creating ${userFirst.username}`);
       } else {
-
-        firstUser.performLogin((err, date) => {
+        console.log(`${userFirst.username} is created.`);
+  
+        userFirst.performLogin((err, data) => {
           if (err) {
-            console.error(`An error occurred during authorization ${firstUser}`);
+            console.error(`Error during authorization ${userFirst.username}`);
           } else {
-
-            firstUser.addMoney({currency: `EUR`, amount: 200}, (err, date) => {
+            console.log(`${userFirst.username} is authorized`);
+  
+            const newMoney = {
+              currency: `RUB`,
+              amount: 20000
+            };
+            userFirst.addMoney(newMoney, (err, data) => {
               if (err) {
-                console.error(`Error during adding money to ${firstUser}`);
+                console.error(`Error during adding money to ${userFirst.username}`);
               } else {
+                console.log(`Added ${newMoney.amount} ${newMoney.currency} to ${userFirst.username}`);
+                
+                const newCoins = {
+                  fromCurrency: `RUB`,
+                  targetCurrency: `NETCOIN`,
+                  targetAmount: 10
+                };
+                userFirst.convertMoney(newCoins, (err, data) => {
+                  if (err) {
+                    console.error(`Error during convetring money`);
+                  } else {
+                    console.log(`${userFirst.username} converted to coins`, data);
 
-                // firstUser.convertMoney({fromCurrency: `EUR`, targetCurrency: 100, targetAmount: `EUR`});
+                    userSecond.creatUser((err, data) => {
+                      if (err) {
+                        console.error(`Error during creating ${userSecond.username}`);
+                      } else {
+                        console.log(`${userSecond.username} is created.`);
+
+                        const present = {
+                          to: userSecond.username,
+                          amount: 5
+                        };
+                        userFirst.transferMoney(present, (err, data) => {
+                          if (err) {
+                            console.error(`Error during transfer money`);
+                          } else {
+                            console.log(`${userSecond.username} has got ${present.amount} netcoins`);
+                          };
+                        });
+                      };
+                    });
+                  };
+                });
               };
             });
           };
         });
       };
     });
-
+  });
 };
 
 main();
