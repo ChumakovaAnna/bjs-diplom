@@ -76,10 +76,9 @@ function main () {
     if (err) {
       console.error(`Error during getting stocks`);
     } else {
-      console.log(data[0]);
-      stocks = data[0];
+      stocks = data[99];
     };
-
+    
     const userFirst = new Profile(
       {
         username: "Oleg",
@@ -122,10 +121,15 @@ function main () {
               } else {
                 console.log(`Added ${newMoney.amount} ${newMoney.currency} to ${userFirst.username}`);
                 
-                const newCoins = {
+                const newCurrency = {
                   fromCurrency: `RUB`,
                   targetCurrency: `NETCOIN`,
-                  targetAmount: 10
+                };
+
+                const newCoins = {
+                  fromCurrency: newCurrency.fromCurrency,
+                  targetCurrency: newCurrency.targetCurrency,
+                  targetAmount: newMoney.amount * stocks[`${newCurrency.fromCurrency}_${newCurrency.targetCurrency}`]
                 };
                 userFirst.convertMoney(newCoins, (err, data) => {
                   if (err) {
